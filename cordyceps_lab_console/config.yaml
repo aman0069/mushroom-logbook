@@ -1,21 +1,32 @@
-name: "Cordyceps Lab Console"
-version: "0.2.7"
-slug: "cordyceps-lab-console"
-description: "Local-first cultivation lab dashboard for Cordyceps militaris workflows"
-arch:
-  - amd64
-  - aarch64
+name: "Cordyceps Lab Console (F43 SOP Suite)"
+description: "Local-first Cordyceps militaris (Agripie F43) cultivation logbook, SOP register suite, QR label generator, and Home Assistant environmental tracker."
+version: "1.3.0"
+slug: "cordyceps_lab_console"
 init: false
-startup: application
-panel_icon: "mdi:flask"
-panel_title: "Cordyceps Lab"
+arch:
+  - aarch64
+  - amd64
+  - armv7
 ingress: true
 ingress_port: 3001
-host_network: false
+panel_icon: "mdi:mushroom-outline"
+panel_title: "Cordyceps Lab"
 homeassistant_api: true
-full_access: false
-
+map:
+  - data:rw
 options:
-  port: 3001
+  cleanroom_temp_entity: "sensor.cordyceps_cleanroom_temperature"
+  dark_room_temp_entity: "sensor.cordyceps_dark_room_temperature"
+  dark_room_rh_entity: "sensor.cordyceps_dark_room_humidity"
+  fruiting_temp_entity: "sensor.cordyceps_fruiting_room_temperature"
+  fruiting_rh_entity: "sensor.cordyceps_fruiting_room_humidity"
+  fruiting_co2_entity: "sensor.cordyceps_fruiting_room_co2"
+  fruiting_lux_entity: "sensor.cordyceps_fruiting_room_illuminance"
 schema:
-  port: int
+  cleanroom_temp_entity: str?
+  dark_room_temp_entity: str?
+  dark_room_rh_entity: str?
+  fruiting_temp_entity: str?
+  fruiting_rh_entity: str?
+  fruiting_co2_entity: str?
+  fruiting_lux_entity: str?
