@@ -1,0 +1,241 @@
+body:has(nav[aria-label='Cultivation process']) {
+  color-scheme: dark;
+  background: #070b12;
+  color: #e2e8f0;
+}
+
+body:has(nav[aria-label='Cultivation process']) ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+body:has(nav[aria-label='Cultivation process']) ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) {
+  min-height: 100vh;
+  background: #070b12 !important;
+  color: #e2e8f0 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .bg-slate-950\/90 {
+  background-color: rgb(7 11 18 / 92%) !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .bg-slate-900 {
+  background-color: #111827 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .text-slate-800,
+.light-lab:has(nav[aria-label='Cultivation process']) .text-slate-700 {
+  color: #d7e0eb !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .text-slate-600,
+.light-lab:has(nav[aria-label='Cultivation process']) .text-slate-500,
+.light-lab:has(nav[aria-label='Cultivation process']) .text-slate-400 {
+  color: #91a0b3 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .text-slate-100,
+.light-lab:has(nav[aria-label='Cultivation process']) .text-slate-200,
+.light-lab:has(nav[aria-label='Cultivation process']) .text-slate-300 {
+  color: #d7e0eb !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .text-emerald-700,
+.light-lab:has(nav[aria-label='Cultivation process']) .text-cyan-400 {
+  color: #fbbf24 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .border-slate-200,
+.light-lab:has(nav[aria-label='Cultivation process']) .border-slate-300,
+.light-lab:has(nav[aria-label='Cultivation process']) .border-slate-700,
+.light-lab:has(nav[aria-label='Cultivation process']) .border-slate-800 {
+  border-color: #334155 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl {
+  max-width: 80rem;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl > header {
+  position: relative;
+  overflow: hidden;
+  border-color: #293548 !important;
+  background:
+    radial-gradient(ellipse at 92% 0, rgb(245 158 11 / 12%), transparent 36%),
+    #111827 !important;
+  box-shadow: 0 16px 36px rgb(0 0 0 / 16%) !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl > header::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: #f59e0b;
+  content: '';
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl > header > div > div:first-child > p {
+  color: #fbbf24 !important;
+  letter-spacing: 0.2em;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl > header h1 {
+  color: #f8fafc !important;
+  letter-spacing: -0.035em;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl > header button {
+  border-color: #3a475a !important;
+  background: #1b2735 !important;
+  color: #e2e8f0 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl > header button:hover {
+  border-color: #f59e0b !important;
+  background: #263547 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl nav[role='tablist'] button {
+  min-width: 0;
+  border-color: #293548 !important;
+  background: #111827 !important;
+  color: #cbd5e1 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl nav[role='tablist'] button:hover {
+  border-color: #64748b !important;
+  background: #172131 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl nav[role='tablist'] button[aria-selected='true'] {
+  border-color: #f59e0b !important;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+  color: #17120a !important;
+  box-shadow: 0 8px 20px rgb(245 158 11 / 16%) !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl nav[role='tablist'] button[aria-selected='true'] svg {
+  color: #17120a !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl [role='tabpanel'] {
+  border-color: #293548 !important;
+  background: #111827 !important;
+  box-shadow: 0 16px 36px rgb(0 0 0 / 12%) !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .bg-white,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .bg-slate-50,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .bg-emerald-50 {
+  background-color: #0b111b !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .bg-slate-950\/80,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .bg-slate-900\/80,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .bg-slate-900,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .bg-slate-950\/60,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .bg-slate-950\/90 {
+  background-color: #111827 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .border-slate-100,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .border-slate-200,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .border-slate-300 {
+  border-color: #293548 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .border-slate-800,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .border-slate-700 {
+  border-color: #334155 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #293548 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-slate-800,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-slate-700 {
+  color: #d7e0eb !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-slate-600,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-slate-500,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-slate-400 {
+  color: #91a0b3 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-slate-100,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-slate-200,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-slate-300 {
+  color: #d7e0eb !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-emerald-700,
+.light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl .text-cyan-400 {
+  color: #fbbf24 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .field {
+  color: #cbd5e1 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .field input,
+.light-lab:has(nav[aria-label='Cultivation process']) .field textarea,
+.light-lab:has(nav[aria-label='Cultivation process']) .field select {
+  border-color: #3a475a;
+  background: #070b12;
+  color: #e2e8f0;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .field input:focus,
+.light-lab:has(nav[aria-label='Cultivation process']) .field textarea:focus,
+.light-lab:has(nav[aria-label='Cultivation process']) .field select:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgb(245 158 11 / 16%);
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .bg-emerald-700 {
+  background-color: #f0a91a !important;
+  color: #17120a !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .bg-cyan-400 {
+  background-color: #f0a91a !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .text-slate-950 {
+  color: #17120a !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) .hover\\:bg-emerald-50:hover,
+.light-lab:has(nav[aria-label='Cultivation process']) .hover\\:bg-slate-50:hover {
+  background-color: #1b2735 !important;
+}
+
+.light-lab:has(nav[aria-label='Cultivation process']) button:focus-visible,
+.light-lab:has(nav[aria-label='Cultivation process']) a:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 2px;
+}
+
+@media (max-width: 639px) {
+  .light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl {
+    padding: 0.75rem;
+  }
+
+  .light-lab:has(nav[aria-label='Cultivation process']) > .mx-auto.max-w-7xl nav[role='tablist'] button {
+    min-height: 5rem;
+    padding: 0.75rem;
+  }
+}
