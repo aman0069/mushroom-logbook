@@ -218,8 +218,8 @@ body:has(nav[aria-label='Cultivation process']) ::-webkit-scrollbar-thumb:hover 
   color: #17120a !important;
 }
 
-.light-lab:has(nav[aria-label='Cultivation process']) .hover\\:bg-emerald-50:hover,
-.light-lab:has(nav[aria-label='Cultivation process']) .hover\\:bg-slate-50:hover {
+.light-lab:has(nav[aria-label='Cultivation process']) [class~='hover:bg-emerald-50']:hover,
+.light-lab:has(nav[aria-label='Cultivation process']) [class~='hover:bg-slate-50']:hover {
   background-color: #1b2735 !important;
 }
 
