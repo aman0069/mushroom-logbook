@@ -146,16 +146,16 @@ button, input, textarea {
     margin: 8mm;
   }
 
-  body * {
+  .logbook-mode * {
     visibility: hidden !important;
   }
 
-  #root > div > div:has(img[alt^='QR code for']),
-  #root > div > div:has(img[alt^='QR code for']) * {
+  #root > .logbook-mode > div:has(img[alt^='QR code for']),
+  #root > .logbook-mode > div:has(img[alt^='QR code for']) * {
     visibility: visible !important;
   }
 
-  #root > div > div:has(img[alt^='QR code for']) {
+  #root > .logbook-mode > div:has(img[alt^='QR code for']) {
     position: fixed !important;
     inset: 0 !important;
     z-index: 9999 !important;
@@ -168,7 +168,7 @@ button, input, textarea {
     color: #000 !important;
   }
 
-  #root > div > div:has(img[alt^='QR code for']) > div {
+  #root > .logbook-mode > div:has(img[alt^='QR code for']) > div {
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
@@ -177,7 +177,7 @@ button, input, textarea {
     box-shadow: none !important;
   }
 
-  #root > div > div:has(img[alt^='QR code for']) button {
+  #root > .logbook-mode > div:has(img[alt^='QR code for']) button {
     display: none !important;
   }
 }

@@ -2,7 +2,8 @@ import JsBarcode from 'jsbarcode'
 import QRCode from 'qrcode'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
-import { Activity, AlertTriangle, ArrowRightLeft, CalendarDays, Check, ClipboardList, FlaskConical, Layers3, Microscope, Plus, Printer, QrCode, ScanLine, Settings, Snowflake, Syringe, Trash2, Wrench, X, type LucideIcon } from 'lucide-react'
+import { Activity, AlertTriangle, ArrowRightLeft, Beaker, CalendarDays, Check, ClipboardList, Droplets, FlaskConical, Gauge, Layers3, Microscope, Plus, Printer, QrCode, RefreshCw, ScanLine, Settings, Snowflake, Sun, Syringe, Thermometer, Trash2, Wind, Wrench, X, type LucideIcon } from 'lucide-react'
+import F43Console from './F43Console'
 
 type Batch = {
   id: string
@@ -15,6 +16,7 @@ type Batch = {
   barcodeValue: string
   createdAt?: string
   activityLogs?: Array<{ processType?: string | null }>
+  jars?: Array<{ status?: string }>
 }
 
 type Activity = {
@@ -31,6 +33,7 @@ type Activity = {
   cultureFlaskLog?: { flask: { flaskCode: string } }
 }
 type SensorSnapshot = {
+  capturedAt?: string
   roomLocation: string
   temperatureC: number | null
   temperatureStatus: string
@@ -101,6 +104,31 @@ const activityDetailEntries = (activity: Activity) => {
 const displayDetailValue = (value: unknown) => typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
   ? String(value)
   : JSON.stringify(value)
+
+const readActivityDetails = (activity: Activity): Record<string, unknown> => {
+  try {
+    const details: unknown = JSON.parse(activity.detailsJson || '{}')
+    return details && typeof details === 'object' && !Array.isArray(details) ? details as Record<string, unknown> : {}
+  } catch {
+    return {}
+  }
+}
+
+const localDateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+
+const sensorMetrics: Array<{
+  key: 'temperature' | 'humidity' | 'co2' | 'lux'
+  label: string
+  unit: string
+  valueField: 'temperatureC' | 'humidityRh' | 'co2Ppm' | 'lux'
+  statusField: 'temperatureStatus' | 'humidityStatus' | 'co2Status' | 'luxStatus'
+  Icon: LucideIcon
+}> = [
+  { key: 'temperature', label: 'Temperature', unit: '°C', valueField: 'temperatureC', statusField: 'temperatureStatus', Icon: Thermometer },
+  { key: 'humidity', label: 'Humidity', unit: '% RH', valueField: 'humidityRh', statusField: 'humidityStatus', Icon: Droplets },
+  { key: 'co2', label: 'CO₂', unit: 'ppm', valueField: 'co2Ppm', statusField: 'co2Status', Icon: Wind },
+  { key: 'lux', label: 'Light', unit: 'lx', valueField: 'lux', statusField: 'luxStatus', Icon: Sun },
+]
 
 const requestId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
@@ -199,10 +227,15 @@ function App() {
   const [batches, setBatches] = useState<Batch[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [cultureFlasks, setCultureFlasks] = useState<CultureFlask[]>([])
-  const [activeTab, setActiveTab] = useState(() => activityTabs.find((tab) => tab.process === query.get('process'))?.id ?? 'autoclave')
+  const [activeTab, setActiveTab] = useState(() => activityTabs.find((tab) => tab.process === query.get('process'))?.id ?? 'overview')
+  const [appMode, setAppMode] = useState<'logbook' | 'f43'>('logbook')
   const [selectedProcess, setSelectedProcess] = useState<string | null>(query.get('process'))
   const [activityDateTime, setActivityDateTime] = useState(localNow)
   const [settings, setSettings] = useState<AppSettings>(loadSettings)
+  const [plannerTarget, setPlannerTarget] = useState(() => String(settings.defaultJarCount))
+  const [plannerOverage, setPlannerOverage] = useState('0')
+  const [dataStatus, setDataStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [dataError, setDataError] = useState('')
   const [showConfig, setShowConfig] = useState(false)
   const [notes, setNotes] = useState('')
   const [jarCount, setJarCount] = useState('')
@@ -232,15 +265,24 @@ function App() {
   }, [settings])
 
   const refresh = async () => {
-    const [batchResponse, activityResponse, flaskResponse] = await Promise.all([fetch(apiUrl('batches')), fetch(apiUrl('activities')), fetch(apiUrl('culture-flasks'))])
-    const [batchData, activityData, flaskData] = await Promise.all([
-      readJson<Batch[]>(batchResponse, 'Batches API'),
-      readJson<Activity[]>(activityResponse, 'Activities API'),
-      readJson<CultureFlask[]>(flaskResponse, 'Culture flasks API'),
-    ])
-    setBatches(batchData)
-    setActivities(activityData)
-    setCultureFlasks(flaskData)
+    setDataStatus('loading')
+    setDataError('')
+    try {
+      const [batchResponse, activityResponse, flaskResponse] = await Promise.all([fetch(apiUrl('batches')), fetch(apiUrl('activities')), fetch(apiUrl('culture-flasks'))])
+      const [batchData, activityData, flaskData] = await Promise.all([
+        readJson<Batch[]>(batchResponse, 'Batches API'),
+        readJson<Activity[]>(activityResponse, 'Activities API'),
+        readJson<CultureFlask[]>(flaskResponse, 'Culture flasks API'),
+      ])
+      setBatches(batchData)
+      setActivities(activityData)
+      setCultureFlasks(flaskData)
+      setDataStatus('ready')
+    } catch (error) {
+      setDataStatus('error')
+      setDataError(error instanceof Error ? error.message : 'The API records could not be loaded.')
+      throw error
+    }
   }
 
   const replayPendingActivities = async () => {
@@ -292,7 +334,7 @@ function App() {
       .catch((error: Error) => setScanError(error.message))
   }, [])
 
-  const openActivity = (process: string) => {
+  const openActivity = (process: string, plannedJarCount?: number, preferredBatchId?: string) => {
     const matchingTab = activityTabs.find((tab) => tab.process === process)
     if (matchingTab) setActiveTab(matchingTab.id)
     setSelectedProcess(process)
@@ -300,9 +342,10 @@ function App() {
     setNotes('')
     const dailyPrep = process === 'Autoclave run'
     const queryBatch = query.get('batchId') ? batches.find((batch) => batch.id === query.get('batchId')) : undefined
-    const selectedBatch = queryBatch ?? (dailyPrep ? batches.find((batch) => batch.batchCode.startsWith(localBatchPrefix())) : batches[0])
+    const preferredBatch = preferredBatchId ? batches.find((batch) => batch.id === preferredBatchId) : undefined
+    const selectedBatch = queryBatch ?? preferredBatch ?? (dailyPrep ? batches.find((batch) => batch.batchCode.startsWith(localBatchPrefix())) : batches[0])
     setPrefilledBatchId(selectedBatch?.id)
-    setJarCount(process === 'Autoclave run' ? String(settings.defaultJarCount) : String(selectedBatch?.jarCount ?? ''))
+    setJarCount(process === 'Autoclave run' ? String(plannedJarCount ?? settings.defaultJarCount) : String(selectedBatch?.jarCount ?? ''))
     setDetails({})
     setClientRequestId(requestId())
     setFeedback(null)
@@ -398,13 +441,91 @@ function App() {
         : [['workPerformed', 'Work performed'], ['location', 'Area / equipment'], ['material', 'Material / chemical used']]
 
   const setDetail = (key: string, value: string) => setDetails((current) => ({ ...current, [key]: value }))
-  const todayCount = activities.filter((activity) => activity.activityDateTime.slice(0, 10) === new Date().toISOString().slice(0, 10)).length
+  const recentActivities = [...activities].sort((a, b) => new Date(b.activityDateTime).getTime() - new Date(a.activityDateTime).getTime())
+  const todayCount = activities.filter((activity) => localDateKey(new Date(activity.activityDateTime)) === localDateKey(new Date())).length
+  const activeBatches = batches.filter((batch) => batch.status.toLowerCase() === 'active')
+  const jarsAvailable = batches.every((batch) => Array.isArray(batch.jars))
+  const activeJarCount = batches.reduce((total, batch) => total + (batch.jars?.filter((jar) => jar.status?.toLowerCase() === 'active').length ?? 0), 0)
+  const queryBatch = query.get('batchId') ? batches.find((batch) => batch.id === query.get('batchId')) : undefined
+  const focusBatch = queryBatch ?? activeBatches[0] ?? batches[0]
+  const focusedActivities = focusBatch ? recentActivities.filter((activity) => activity.batch?.id === focusBatch.id) : recentActivities
+  const checkpointEvents = (processes: string[]) => (focusBatch ? focusedActivities : recentActivities)
+    .filter((activity) => processes.includes(activity.processType || ''))
+  const flaskLogCount = cultureFlasks.reduce((total, flask) => total + flask.logs.length, 0)
+  const latestSnapshot = recentActivities
+    .flatMap((activity) => (activity.sensorSnapshots ?? []).map((snapshot) => ({
+      activity,
+      snapshot,
+      capturedAt: snapshot.capturedAt || activity.activityDateTime,
+    })))
+    .sort((a, b) => new Date(b.capturedAt).getTime() - new Date(a.capturedAt).getTime())[0]
+  const harvestWithYield = recentActivities.find((activity) => {
+    if (activity.processType !== 'Harvest') return false
+    const details = readActivityDetails(activity)
+    return ['freshYield', 'dryYield'].some((key) => details[key] !== undefined && details[key] !== null && String(details[key]).trim() !== '')
+  })
+  const harvestDetails = harvestWithYield ? readActivityDetails(harvestWithYield) : {}
+  const yieldSummary = harvestWithYield
+    ? [
+      harvestDetails.dryYield !== undefined && harvestDetails.dryYield !== '' ? `Dry ${harvestDetails.dryYield} g` : '',
+      harvestDetails.freshYield !== undefined && harvestDetails.freshYield !== '' ? `Fresh ${harvestDetails.freshYield} g` : '',
+    ].filter(Boolean).join(' · ')
+    : ''
+  const plannerTargetValue = Number(plannerTarget)
+  const plannerOverageValue = Number(plannerOverage)
+  const plannerInputsValid = plannerTarget.trim() !== '' && Number.isInteger(plannerTargetValue) && plannerTargetValue >= 1 && plannerTargetValue <= 75
+    && plannerOverage.trim() !== '' && Number.isInteger(plannerOverageValue) && plannerOverageValue >= 0 && plannerOverageValue <= 100
+  const plannedJars = plannerInputsValid ? Math.ceil(plannerTargetValue * (1 + plannerOverageValue / 100)) : 0
+  const plannerWithinLoadLimit = plannerInputsValid && plannedJars <= 75
+  type CheckpointCard = {
+    id: string
+    title: string
+    description: string
+    evidence: string
+    Icon: LucideIcon
+    onClick: () => void
+    secondary?: () => void
+  }
+  const checkpointCards: CheckpointCard[] = [
+    {
+      id: 'culture',
+      title: 'Culture records',
+      description: dataStatus !== 'ready' ? 'API records not loaded' : flaskLogCount ? `${flaskLogCount} saved flask log entries` : `${cultureFlasks.length} flask inventory records`,
+      evidence: dataStatus === 'ready' ? flaskLogCount ? `${flaskLogCount} flask log entries · separate inventory` : 'Flasks are not linked to batch lineage' : 'Waiting for API records',
+      Icon: FlaskConical,
+      onClick: () => { setSelectedProcess(null); setActiveTab('liquid-culture') },
+    },
+    ...[
+      { id: 'autoclave', title: 'Autoclave', processes: ['Autoclave run'], Icon: FlaskConical, process: 'Autoclave run' },
+      { id: 'inoculation', title: 'Inoculation', processes: ['Inoculation'], Icon: Syringe, process: 'Inoculation' },
+      { id: 'incubation', title: 'Incubation + transfer', processes: ['Incubation observation', 'Dark-room to light-room transfer'], Icon: ArrowRightLeft, process: 'Incubation observation' },
+      { id: 'harvest', title: 'Harvest', processes: ['Harvest'], Icon: Check, process: 'Harvest' },
+    ].map((step): CheckpointCard => {
+      const events = checkpointEvents(step.processes)
+      const lastEvent = events[0]
+      const evidence = dataStatus !== 'ready'
+        ? 'API records not loaded'
+        : lastEvent
+          ? `${activityLabel(lastEvent)} · ${new Date(lastEvent.activityDateTime).toLocaleDateString('en-IN')}`
+          : focusBatch ? 'No saved event for this batch' : 'No saved event yet'
+      return {
+        id: step.id,
+        title: step.title,
+        description: dataStatus === 'ready' ? `${events.length} saved event${events.length === 1 ? '' : 's'}${focusBatch ? ' for batch' : ''}` : 'API records not loaded',
+        evidence,
+        Icon: step.Icon,
+        onClick: () => openActivity(step.process, undefined, step.id === 'autoclave' ? undefined : focusBatch?.id),
+        secondary: step.id === 'incubation' ? () => openActivity('Dark-room to light-room transfer', undefined, focusBatch?.id) : undefined,
+      }
+    }),
+  ]
   const stats = [
     { label: 'Today', value: todayCount, Icon: CalendarDays },
     { label: 'Batches', value: batches.length, Icon: Layers3 },
     { label: 'Pending sync', value: activities.filter((activity) => activity.googleSyncStatus !== 'synced').length, Icon: Activity },
   ]
   const currentTab = activityTabs.find((tab) => tab.id === activeTab) ?? activityTabs[0]
+  const showOverview = activeTab === 'overview'
   const selectedCultureFlask = cultureFlasks.find((flask) => flask.id === cultureFlaskId)
   const todayAutoclaveCycles = activities.filter((activity) => activity.processType === 'Autoclave run' && new Date(activity.activityDateTime).toDateString() === new Date().toDateString()).length
 
@@ -421,13 +542,20 @@ function App() {
     )
   }
 
+  if (appMode === 'f43') {
+    return <F43Console onReturnToLogbook={() => setAppMode('logbook')} />
+  }
+
   if (showConfig) {
     return (
       <div className="light-lab min-h-screen bg-[#f6f8f4] p-4 text-slate-900 sm:p-6">
         <section className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div><p className="text-xs uppercase tracking-[0.3em] text-cyan-400">Cordyceps Lab</p><h1 className="mt-2 text-2xl font-semibold text-slate-900">Config</h1></div>
-            <button onClick={() => setShowConfig(false)} aria-label="Back to logbook" title="Back to logbook" className="rounded-lg border border-slate-700 p-3 text-slate-200"><X /></button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setShowConfig(false); setAppMode('f43') }} className="min-h-11 rounded-lg bg-emerald-700 px-4 font-semibold text-white">F43 Lab Console</button>
+              <button onClick={() => setShowConfig(false)} aria-label="Back to logbook" title="Back to logbook" className="rounded-lg border border-slate-700 p-3 text-slate-200"><X /></button>
+            </div>
           </div>
           {feedback && <p className={`mb-5 rounded-lg border px-4 py-3 ${feedback.kind === 'success' ? 'border-emerald-400/40 text-emerald-200' : 'border-rose-400/40 text-rose-200'}`}>{feedback.text}</p>}
           <div className="grid gap-4 sm:grid-cols-2">
@@ -456,20 +584,111 @@ function App() {
   }
 
   return (
-    <div className="light-lab min-h-screen bg-[#f6f8f4] text-slate-900">
+    <div className="logbook-mode light-lab min-h-screen bg-[#f6f8f4] text-slate-900">
       <div className="mx-auto max-w-7xl p-4 sm:p-6">
         <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <div><p className="text-xs uppercase tracking-[0.25em] text-emerald-700">Cordyceps Lab</p><h1 className="mt-2 text-2xl font-semibold text-slate-900">Cultivation logbook</h1></div>
-          <div className="flex flex-wrap items-center gap-2"><button onClick={() => setShowConfig(true)} aria-label="Config" title="Config" className="flex min-h-12 items-center gap-2 rounded-lg border border-slate-300 px-4 text-slate-700"><Settings className="h-5 w-5" /> Config</button>{currentTab.process && <button onClick={() => openActivity(currentTab.process!)} className="flex min-h-12 items-center gap-2 rounded-lg bg-emerald-700 px-4 font-semibold text-white"><ClipboardList className="h-5 w-5" /> Log {currentTab.label}</button>}</div>
+          <div className="flex flex-wrap items-center gap-2"><button onClick={() => setAppMode('f43')} className="flex min-h-12 items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-50 px-4 font-semibold text-amber-900 hover:bg-amber-100"><FlaskConical className="h-5 w-5" /> F43 Lab Console</button><button onClick={() => { void refresh().catch(() => undefined) }} disabled={dataStatus === 'loading'} aria-label="Refresh API records" title="Refresh API records" className="flex min-h-12 items-center gap-2 rounded-lg border border-slate-300 px-4 text-slate-700 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${dataStatus === 'loading' ? 'animate-spin' : ''}`} /> Refresh</button><button onClick={() => setShowConfig(true)} aria-label="Config" title="Config" className="flex min-h-12 items-center gap-2 rounded-lg border border-slate-300 px-4 text-slate-700"><Settings className="h-5 w-5" /> Config</button>{currentTab.process && <button onClick={() => openActivity(currentTab.process!)} className="flex min-h-12 items-center gap-2 rounded-lg bg-emerald-700 px-4 font-semibold text-white"><ClipboardList className="h-5 w-5" /> Log {currentTab.label}</button>}</div>
         </header>
 
         <nav aria-label="Cultivation process" role="tablist" className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <button id="tab-overview" role="tab" aria-selected={showOverview} aria-controls="panel-overview" onClick={() => { setSelectedProcess(null); setActiveTab('overview') }} className={`flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors ${showOverview ? 'border-emerald-700 bg-emerald-700 text-white shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-500 hover:bg-emerald-50'}`}>
+            <Activity className={`h-5 w-5 ${showOverview ? 'text-white' : 'text-emerald-700'}`} /><span className="font-medium">Lab console</span>
+          </button>
           {activityTabs.map((tab) => <button key={tab.id} id={`tab-${tab.id}`} role="tab" aria-selected={activeTab === tab.id} aria-controls={`panel-${tab.id}`} onClick={() => setActiveTab(tab.id)} className={`flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors ${activeTab === tab.id ? 'border-emerald-700 bg-emerald-700 text-white shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-500 hover:bg-emerald-50'}`}>
             <motion.span animate={activeTab === tab.id ? tab.animation : {}} transition={{ duration: 1.3, repeat: activeTab === tab.id ? Infinity : 0, ease: 'easeInOut' }}><tab.Icon className={`h-5 w-5 ${activeTab === tab.id ? 'text-white' : 'text-emerald-700'}`} /></motion.span><span className="font-medium">{tab.label}</span>
           </button>)}
         </nav>
 
+        {showOverview && <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" className="mb-6 space-y-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400">F43 lab console</p><h2 className="mt-1 text-2xl font-semibold text-slate-100">Operational overview</h2><p className="mt-1 text-sm text-slate-400">Saved batches, activities, flask records, and sensor snapshots from this app’s API.</p></div>
+            <p className="text-sm text-slate-400">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          </div>
+
+          {dataStatus === 'loading' && <p role="status" className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-300">Loading saved API records…</p>}
+          {dataStatus === 'error' && <div role="alert" className="rounded-lg border border-rose-400/40 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"><p className="font-semibold">API records unavailable</p><p className="mt-1">{dataError} Dashboard metrics are withheld until records load successfully.</p></div>}
+          {dataStatus === 'ready' && <p className="rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-4 py-2 text-xs text-emerald-200">API records loaded · all counts below reflect saved app records. Sensor values are shown only when a persisted snapshot exists.</p>}
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {[
+              { label: 'Active batches', value: dataStatus === 'ready' ? activeBatches.length : '—', note: 'status: active', Icon: Layers3 },
+              { label: 'Today’s activities', value: dataStatus === 'ready' ? todayCount : '—', note: 'local calendar day', Icon: CalendarDays },
+              { label: 'Culture flasks', value: dataStatus === 'ready' ? cultureFlasks.length : '—', note: 'inventory · separate from batches', Icon: FlaskConical },
+              { label: 'Active jars', value: dataStatus === 'ready' ? jarsAvailable ? activeJarCount : '—' : '—', note: dataStatus !== 'ready' ? 'API records not loaded' : jarsAvailable ? 'from batch jar records' : 'not included in API response', Icon: Beaker },
+              { label: 'Recent yield', value: dataStatus !== 'ready' ? '—' : yieldSummary || 'No yield recorded', note: harvestWithYield ? `Harvest · ${new Date(harvestWithYield.activityDateTime).toLocaleDateString('en-IN')}` : 'from saved harvest details only', Icon: Gauge },
+            ].map(({ label, value, note, Icon }) => <article key={label} className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+              <div className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-slate-400"><span>{label}</span><Icon className="h-4 w-4 shrink-0 text-amber-400" /></div>
+              <p className="mt-3 break-words text-2xl font-semibold text-slate-100">{value}</p><p className="mt-1 text-xs text-slate-500">{note}</p>
+            </article>)}
+          </div>
+
+          <section aria-labelledby="checkpoint-heading" className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/70">
+            <div className="flex flex-wrap items-end justify-between gap-2 border-b border-slate-800 px-4 py-4 sm:px-5">
+              <div><h3 id="checkpoint-heading" className="font-semibold text-slate-100">Operational checkpoints</h3><p className="mt-1 text-xs text-slate-400">{focusBatch ? `Batch context: ${focusBatch.batchCode} · ${focusBatch.currentStage}` : 'No batch record to anchor batch-specific activity yet.'}</p></div>
+              <span className="text-xs text-slate-500">Saved events only · checkpoints open existing workflows</span>
+            </div>
+            <div className="grid gap-px bg-slate-800 sm:grid-cols-2 lg:grid-cols-5">
+              {checkpointCards.map((step) => <article key={step.id} className="flex min-h-44 flex-col bg-slate-950/60 p-4">
+                  <button type="button" onClick={step.onClick} className="group flex flex-1 flex-col items-start text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 focus-visible:outline-offset-2">
+                    <span className="flex w-full items-center justify-between gap-2"><span className="grid h-8 w-8 place-items-center rounded-md border border-slate-700 bg-slate-900 text-amber-400"><step.Icon className="h-4 w-4" /></span><span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{step.id === 'culture' ? 'Separate records' : 'Checkpoint'}</span></span>
+                    <span className="mt-4 font-semibold text-slate-100 group-hover:text-amber-300">{step.title}</span><span className="mt-1 text-xs text-slate-400">{step.description}</span><span className="mt-3 text-xs leading-relaxed text-slate-500">{step.evidence}</span>
+                  </button>
+                  {step.secondary && <button type="button" onClick={step.secondary} className="mt-3 min-h-9 rounded-md border border-slate-700 px-3 text-xs text-slate-300 hover:border-amber-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400">Open transfer workflow</button>}
+                </article>)}
+            </div>
+          </section>
+
+          <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+            <section aria-labelledby="planner-heading" className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-400">Planning only</p><h3 id="planner-heading" className="mt-1 text-lg font-semibold text-slate-100">Batch calculator</h3><p className="mt-1 text-xs text-slate-400">F43 reference ratios · not saved as batch data</p></div><Gauge className="mt-1 h-5 w-5 text-amber-400" /></div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="field">Target jars<input type="number" min="1" max="75" step="1" inputMode="numeric" value={plannerTarget} onChange={(event) => setPlannerTarget(event.target.value)} /></label>
+                <label className="field">Overage (%)<input type="number" min="0" max="100" step="1" inputMode="numeric" value={plannerOverage} onChange={(event) => setPlannerOverage(event.target.value)} /></label>
+              </div>
+              {!plannerInputsValid && <p role="status" className="mt-2 text-xs text-amber-300">Enter whole numbers: 1–75 target jars and 0–100% overage.</p>}
+              <div className="mt-4 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2"><span className="text-sm text-slate-300">Planned total</span><strong className="text-xl text-amber-300">{plannerInputsValid ? `${plannedJars} jars` : '—'}</strong></div>
+                <div className="mt-3 grid grid-cols-3 gap-2 border-t border-slate-800 pt-3 text-center">
+                  <div><p className="text-[10px] uppercase tracking-wide text-slate-500">Rice</p><p className="mt-1 font-semibold text-slate-100">{plannerInputsValid ? `${plannedJars * 20} g` : '—'}</p><p className="text-[10px] text-slate-500">20 g / jar</p></div>
+                  <div><p className="text-[10px] uppercase tracking-wide text-slate-500">LSFM</p><p className="mt-1 font-semibold text-slate-100">{plannerInputsValid ? `${plannedJars * 30} ml` : '—'}</p><p className="text-[10px] text-slate-500">30 ml / jar</p></div>
+                  <div><p className="text-[10px] uppercase tracking-wide text-slate-500">Spawn</p><p className="mt-1 font-semibold text-slate-100">{plannerInputsValid ? `${plannedJars * 10} ml` : '—'}</p><p className="text-[10px] text-slate-500">10 ml / jar</p></div>
+                </div>
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-slate-400">Only the jar count transfers to the existing Autoclave workflow. These reference quantities are not persisted; configured recipe inputs remain unchanged.</p>
+              {plannerInputsValid && !plannerWithinLoadLimit && <p role="status" className="mt-2 text-xs text-amber-300">This plan exceeds the existing 75-jar per-load limit.</p>}
+              <button type="button" disabled={!plannerWithinLoadLimit} onClick={() => openActivity('Autoclave run', plannedJars)} className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"><ClipboardList className="h-4 w-4" /> Open Autoclave with {plannerInputsValid ? plannedJars : '—'} jars</button>
+            </section>
+
+            <section aria-labelledby="environment-heading" className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Persisted snapshot</p><h3 id="environment-heading" className="mt-1 text-lg font-semibold text-slate-100">Environment</h3></div>{latestSnapshot && dataStatus === 'ready' && <p className="text-right text-xs text-slate-400">{latestSnapshot.snapshot.roomLocation || 'Unspecified room'}<br />{new Date(latestSnapshot.capturedAt).toLocaleString('en-IN')}</p>}</div>
+              <p className="mt-1 text-xs text-slate-400">{latestSnapshot && dataStatus === 'ready' ? `Captured with ${activityLabel(latestSnapshot.activity)} · not a live sensor view` : 'No current sensor readings are inferred from configuration alone.'}</p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {sensorMetrics.map(({ key, label, unit, valueField, statusField, Icon }) => {
+                  const snapshot = latestSnapshot?.snapshot
+                  const matchingMapping = settings.sensors.some((sensor) => sensor.metric === key && sensor.roomLocation === snapshot?.roomLocation && sensor.entityId.trim())
+                  const value = snapshot?.[valueField]
+                  const status = snapshot?.[statusField]
+                  let reading = 'No mapping configured'
+                  if (dataStatus !== 'ready') reading = 'API records unavailable'
+                  else if (!snapshot) reading = settings.sensors.some((sensor) => sensor.metric === key && sensor.entityId.trim()) ? 'Configured · awaiting saved snapshot' : 'No mapping configured'
+                  else if (status === 'unavailable') reading = 'Unavailable at last capture'
+                  else if (status === 'missing') reading = matchingMapping ? 'Configured · not captured' : 'Not mapped at capture'
+                  else if (value !== null && value !== undefined) reading = `${value} ${unit}`
+                  else reading = matchingMapping ? 'Configured · no value saved' : 'No reading saved'
+                  return <article key={key} className="flex min-h-20 items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-slate-900 text-emerald-300"><Icon className="h-4 w-4" /></span>
+                    <div className="min-w-0"><p className="text-xs text-slate-400">{label}</p><p className="mt-1 break-words text-sm font-medium text-slate-100">{reading}</p></div>
+                  </article>
+                })}
+              </div>
+              {dataStatus === 'ready' && !latestSnapshot && <p className="mt-3 rounded-md border border-dashed border-slate-700 p-3 text-xs text-slate-400">No server-persisted sensor snapshot is available yet. Mappings are configuration only until an activity captures them.</p>}
+            </section>
+          </div>
+        </section>}
+
         <AnimatePresence mode="wait">
+          {!showOverview && (
           <motion.section key={currentTab.id} id={`panel-${currentTab.id}`} role="tabpanel" aria-labelledby={`tab-${currentTab.id}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5 flex items-start gap-3"><currentTab.Icon className="mt-1 h-6 w-6 shrink-0 text-emerald-700" /><div><h2 className="text-lg font-semibold text-slate-900">{currentTab.label}</h2><p className="mt-1 text-sm text-slate-600">{currentTab.description}</p></div></div>
             {currentTab.id === 'liquid-culture' ? <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
@@ -482,20 +701,21 @@ function App() {
                 <button disabled={saving || !cultureFlasks.length} onClick={saveCultureFlaskActivity} className="min-h-12 rounded-lg bg-emerald-700 px-4 font-semibold text-white disabled:opacity-50">{saving ? 'Saving…' : 'Log flask activity'}</button>
                 {selectedCultureFlask && <section className="border-t border-slate-200 pt-4"><h3 className="mb-3 font-semibold text-slate-900">History · {selectedCultureFlask.flaskCode}</h3>{selectedCultureFlask.logs.length === 0 ? <p className="text-sm text-slate-500">No entries recorded yet.</p> : <div className="space-y-3">{selectedCultureFlask.logs.map((log) => <article key={log.id} className="border-l-2 border-emerald-600 pl-3"><p className="font-medium text-slate-800">{log.action}</p><p className="text-xs text-slate-500">{new Date(log.activity.activityDateTime || log.createdAt).toLocaleString('en-IN')}</p>{log.activity.notes && <p className="mt-1 text-sm text-slate-600">{log.activity.notes}</p>}{log.activity.sensorSnapshots.map((snapshot) => <p key={`${log.id}-${snapshot.roomLocation}`} className="mt-1 text-xs text-slate-500">{snapshot.roomLocation}: {snapshotSummary(snapshot)}</p>)}</article>)}</div>}</section>}
               </div>
-              <div className="overflow-x-auto"><table className="w-full min-w-[58rem] text-left text-sm"><thead><tr className="border-b border-slate-200 text-slate-500"><th className="p-3">Flask</th><th className="p-3">Strain</th><th className="p-3">Source</th><th className="p-3">Prepared</th><th className="p-3">Status</th><th className="p-3">Notes / last action</th></tr></thead><tbody>{cultureFlasks.map((flask) => <tr key={flask.id} className="border-b border-slate-100 align-top"><td className="p-3 font-semibold text-slate-900">{flask.flaskCode}<span className="ml-2 text-xs font-normal text-slate-500">{flask.capacityMl} ml</span></td><td className="p-3 text-slate-700">{flask.strain}</td><td className="p-3 text-slate-700">{flask.sourceCulture || '—'}</td><td className="p-3 text-slate-700">{flask.preparedAt ? new Date(flask.preparedAt).toLocaleDateString('en-IN') : '—'}</td><td className="p-3 text-slate-700">{flask.status}</td><td className="p-3 text-slate-600"><span>{flask.logs[0]?.action || 'No action'}</span>{flask.notes && <span className="mt-1 block text-xs">{flask.notes}</span>}</td></tr>)}</tbody></table></div>
+              <div className="overflow-x-auto"><table className="w-full min-w-[58rem] text-left text-sm"><thead><tr className="border-b border-slate-200 text-slate-500"><th className="p-3">Flask</th><th className="p-3">Strain</th><th className="p-3">Source</th><th className="p-3">Prepared</th><th className="p-3">Status</th><th className="p-3">Notes / last action</th></tr></thead><tbody>{dataStatus !== 'ready' ? <tr><td colSpan={6} className="p-4 text-slate-500">{dataStatus === 'loading' ? 'Loading flask records…' : 'Flask records are unavailable until the API responds.'}</td></tr> : cultureFlasks.length === 0 ? <tr><td colSpan={6} className="p-4 text-slate-500">No flask inventory records returned by the API.</td></tr> : cultureFlasks.map((flask) => <tr key={flask.id} className="border-b border-slate-100 align-top"><td className="p-3 font-semibold text-slate-900">{flask.flaskCode}<span className="ml-2 text-xs font-normal text-slate-500">{flask.capacityMl} ml</span></td><td className="p-3 text-slate-700">{flask.strain}</td><td className="p-3 text-slate-700">{flask.sourceCulture || '—'}</td><td className="p-3 text-slate-700">{flask.preparedAt ? new Date(flask.preparedAt).toLocaleDateString('en-IN') : '—'}</td><td className="p-3 text-slate-700">{flask.status}</td><td className="p-3 text-slate-600"><span>{flask.logs[0]?.action || 'No action'}</span>{flask.notes && <span className="mt-1 block text-xs">{flask.notes}</span>}</td></tr>)}</tbody></table></div>
             </div> : <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-emerald-50 p-4"><div><p className="font-medium text-slate-900">{currentTab.id === 'autoclave' ? `Today’s autoclave cycles: ${todayAutoclaveCycles} of 3` : currentTab.process}</p><p className="mt-1 text-sm text-slate-600">{settings.sensors.filter((sensor) => sensor.entityId.trim()).length} sensor mappings will be read when you save.</p></div>{currentTab.process && <button onClick={() => openActivity(currentTab.process!)} className="min-h-11 rounded-lg bg-emerald-700 px-4 font-semibold text-white">Log {currentTab.label}</button>}</div>}
           </motion.section>
+          )}
         </AnimatePresence>
 
         {feedback && <div className={`mb-5 flex items-center gap-3 rounded-xl border px-4 py-3 ${feedback.kind === 'success' ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-200' : 'border-rose-400/40 bg-rose-400/10 text-rose-200'}`}>{feedback.kind === 'success' ? <Check /> : <X />}{feedback.text}</div>}
 
-        <section className="mb-6 grid gap-4 sm:grid-cols-3">
+        {!showOverview && <section className="mb-6 grid gap-4 sm:grid-cols-3">
           {stats.map(({ label, value, Icon }) => <div key={label} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5"><div className="flex items-center justify-between text-slate-400"><span>{label}</span><Icon className="h-5 w-5 text-cyan-400" /></div><div className="mt-2 text-3xl font-semibold text-slate-900">{value}</div></div>)}
-        </section>
+        </section>}
 
         <main className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-semibold text-slate-900">Daily batches</h2><span className="text-sm text-slate-500">{batches.length}</span></div>{batches.length === 0 ? <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500">Start today’s batch in the Autoclave card.</p> : <div className="space-y-3">{batches.map((batch) => <div key={batch.id} className="rounded-xl border border-slate-200 bg-white p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-[0.15em] text-emerald-700">{batch.batchCode}</p><p className="mt-1 text-slate-600">{batch.jarCount} jars · {batch.activityLogs?.filter((log) => log.processType === 'Autoclave run').length ?? 0} autoclave cycles</p></div><span className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-700">{batch.currentStage}</span></div><div className="mt-4 flex gap-2"><button onClick={() => setLabelBatch(batch)} aria-label={`Print label for ${batch.batchCode}`} title="Print label" className="flex min-h-11 items-center gap-2 rounded-lg border border-emerald-700/30 px-3 text-emerald-800"><QrCode className="h-4 w-4" /> Label</button><a href={`/lab-scan?t=${batch.qrToken}`} className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 px-3 text-slate-700"><ScanLine className="h-4 w-4" /> Scan</a></div></div>)}</div>}</section>
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-semibold text-slate-900">Recent activities</h2><FlaskConical className="h-5 w-5 text-emerald-700" /></div><div className="divide-y divide-slate-100">{activities.length === 0 ? <p className="py-3 text-slate-500">No saved activities yet.</p> : activities.slice(0, 8).map((activity) => {
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-semibold text-slate-900">Daily batches</h2><span className="text-sm text-slate-500">{dataStatus === 'ready' ? batches.length : '—'}</span></div>{dataStatus !== 'ready' ? <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500">{dataStatus === 'loading' ? 'Loading batch records…' : 'Batch records are unavailable until the API responds.'}</p> : batches.length === 0 ? <p className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500">Start today’s batch in the Autoclave card.</p> : <div className="space-y-3">{batches.map((batch) => <div key={batch.id} className="rounded-xl border border-slate-200 bg-white p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-[0.15em] text-emerald-700">{batch.batchCode}</p><p className="mt-1 text-slate-600">{batch.jarCount} jars · {batch.activityLogs?.filter((log) => log.processType === 'Autoclave run').length ?? 0} autoclave cycles</p></div><span className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-700">{batch.currentStage}</span></div><div className="mt-4 flex gap-2"><button onClick={() => setLabelBatch(batch)} aria-label={`Print label for ${batch.batchCode}`} title="Print label" className="flex min-h-11 items-center gap-2 rounded-lg border border-emerald-700/30 px-3 text-emerald-800"><QrCode className="h-4 w-4" /> Label</button><a href={`/lab-scan?t=${batch.qrToken}`} className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 px-3 text-slate-700"><ScanLine className="h-4 w-4" /> Scan</a></div></div>)}</div>}</section>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><h2 className="text-lg font-semibold text-slate-900">Recent activities</h2><FlaskConical className="h-5 w-5 text-emerald-700" /></div><div className="divide-y divide-slate-100">{dataStatus !== 'ready' ? <p className="py-3 text-slate-500">{dataStatus === 'loading' ? 'Loading activity records…' : 'Activity records are unavailable until the API responds.'}</p> : activities.length === 0 ? <p className="py-3 text-slate-500">No saved activities yet.</p> : activities.slice(0, 8).map((activity) => {
             const isExpanded = expandedActivityId === activity.id
             const details = activityDetailEntries(activity)
             return <article key={activity.id} className="py-2">
