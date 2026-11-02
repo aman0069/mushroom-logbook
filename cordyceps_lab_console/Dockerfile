@@ -1,16 +1,13 @@
 FROM ghcr.io/home-assistant/base:latest
 
-LABEL \
-	io.hass.version="0.2.6" \
-	io.hass.type="app" \
-	io.hass.arch="amd64|aarch64"
+LABEL io.hass.version="1.3.1" io.hass.type="app" io.hass.arch="amd64|aarch64"
 
 RUN apk add --no-cache nodejs npm openssl
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 ENV DATABASE_URL="file:/data/lab.db"
