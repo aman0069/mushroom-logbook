@@ -1,0 +1,599 @@
+.f43-console {
+  min-width: 0;
+  width: 100%;
+  overflow-x: clip;
+  color-scheme: dark;
+}
+
+.f43-console,
+.f43-console * {
+  box-sizing: border-box;
+}
+
+.f43-console .app-main,
+.f43-console .app-main > *,
+.f43-console .app-shell > * {
+  min-width: 0;
+}
+
+.f43-console .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.f43-console .field input,
+.f43-console .field select {
+  width: 100%;
+  min-height: 2.65rem;
+  border: 1px solid #3b485b;
+  border-radius: 0.5rem;
+  background: #080e17;
+  padding: 0.55rem 0.7rem;
+  color: #f1f5f9;
+}
+
+.f43-console .field input:focus,
+.f43-console .field select:focus {
+  border-color: #fbbf24;
+  outline: 2px solid rgb(251 191 36 / 25%);
+  outline-offset: 1px;
+}
+
+.f43-console .field input::placeholder {
+  color: #94a3b8;
+}
+
+.f43-console .toolbar-button,
+.f43-console .secondary-action,
+.f43-console .primary-action {
+  min-height: 40px;
+  justify-content: center;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.f43-console .toolbar-button:hover,
+.f43-console .secondary-action:hover,
+.f43-console .primary-action:hover {
+  transform: translateY(-1px);
+}
+
+.f43-console .sensor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid #253142;
+  border-left: 3px solid #f59e0b;
+  border-radius: 0.75rem;
+  background: linear-gradient(110deg, rgb(245 158 11 / 7%), transparent 44%), #111a26;
+}
+
+.f43-console .sensor-source,
+.f43-console .sensor-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.f43-console .sensor-source strong,
+.f43-console .sensor-source span {
+  display: block;
+}
+
+.f43-console .sensor-source strong {
+  margin-top: 0.12rem;
+  color: #e8edf4;
+  font-size: 0.84rem;
+}
+
+.f43-console .sensor-source span:not(.source-indicator) {
+  margin-top: 0.15rem;
+  color: #a7b3c4;
+  font-size: 0.7rem;
+}
+
+.f43-console .source-indicator {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: #64748b;
+  box-shadow: 0 0 0 4px rgb(100 116 139 / 13%);
+}
+
+.f43-console .source-live {
+  background: #34d399;
+  box-shadow: 0 0 0 4px rgb(52 211 153 / 14%);
+}
+
+.f43-console .eyebrow {
+  margin: 0;
+  color: #a7b3c4;
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.f43-console .secondary-action,
+.f43-console .primary-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid #344256;
+  border-radius: 0.55rem;
+  padding: 0.5rem 0.75rem;
+  background: #1b2735;
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.f43-console .secondary-action:hover {
+  border-color: #506078;
+  background: #263547;
+}
+
+.f43-console .primary-action {
+  border-color: #d68a06;
+  background: #f0a91a;
+  color: #17120a;
+}
+
+.f43-console .primary-action:hover {
+  background: #ffc044;
+}
+
+.f43-console .section-nav {
+  display: flex;
+  overflow: visible;
+  flex-wrap: wrap;
+}
+
+.f43-console .mobile-section-picker {
+  display: none;
+}
+
+.f43-console .desktop-section-tabs {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.f43-console .desktop-section-tabs button {
+  min-width: 0;
+  flex: 1 1 190px;
+  justify-content: flex-start;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.f43-console .lineage-board {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 93% 2%, rgb(245 158 11 / 10%), transparent 38%), #111827;
+}
+
+.f43-console .lineage-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.f43-console .lineage-mark {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #fbbf24;
+  font: 700 0.65rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.16em;
+}
+
+.f43-console .lineage-mark span {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid rgb(245 158 11 / 55%);
+  border-radius: 50%;
+  background: rgb(245 158 11 / 10%);
+}
+
+.f43-console .lineage-mark i {
+  width: 2rem;
+  border-top: 1px solid rgb(245 158 11 / 55%);
+}
+
+.f43-console .lineage-track {
+  position: relative;
+}
+
+.f43-console .lineage-node {
+  position: relative;
+  min-width: 0;
+  min-height: 6rem;
+  border-top-width: 2px !important;
+  transition: transform 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+.f43-console .lineage-node:hover {
+  transform: translateY(-2px);
+  border-color: #b7791f;
+  background-color: #111a26;
+}
+
+.f43-console .lineage-node:not(:last-child)::after {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: -0.62rem;
+  display: grid;
+  width: 1rem;
+  height: 1rem;
+  place-items: center;
+  transform: translate(50%, -50%);
+  border: 1px solid #49566a;
+  border-radius: 50%;
+  background: #0b1118;
+  color: #fbbf24;
+  content: "›";
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.f43-console .lineage-step-agar { border-top-color: #f59e0b !important; }
+.f43-console .lineage-step-lc { border-top-color: #818cf8 !important; }
+.f43-console .lineage-step-sterile { border-top-color: #38bdf8 !important; }
+.f43-console .lineage-step-inoc { border-top-color: #a78bfa !important; }
+.f43-console .lineage-step-yield { border-top-color: #34d399 !important; }
+
+.f43-console .lineage-step-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #b7c2d1;
+  font-size: 0.59rem;
+  font-weight: 750;
+  letter-spacing: 0.065em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.f43-console .lineage-step-label span:first-child {
+  flex: 0 0 auto;
+  color: #fbbf24;
+  font: 700 0.6rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.f43-console .sticker-grid {
+  align-items: stretch;
+}
+
+.f43-console .sticker-card,
+.f43-console .sticker-copy {
+  min-width: 0;
+}
+
+.f43-console .sticker-copy {
+  flex: 1 1 0;
+}
+
+.f43-console .sticker-token {
+  display: block;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.25;
+}
+
+.f43-console .sticker-source {
+  overflow-wrap: anywhere;
+}
+
+.f43-console .empty-register {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 2rem 1rem;
+  border: 1px dashed #344256;
+  border-radius: 0.65rem;
+  background: rgb(2 6 12 / 35%);
+  text-align: center;
+}
+
+.f43-console .empty-register p {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.f43-console .empty-register span {
+  color: #a7b3c4;
+  font-size: 0.7rem;
+}
+
+.f43-console .print-packet {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .f43-console .section-nav {
+    display: block;
+    overflow: visible;
+    padding-top: 0.6rem;
+    padding-bottom: 0.65rem;
+  }
+
+  .f43-console .desktop-section-tabs {
+    display: none;
+  }
+
+  .f43-console .mobile-section-picker {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .f43-console .mobile-section-picker select {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #3b485b;
+    border-radius: 0.55rem;
+    background: #101925;
+    padding: 0.55rem 2.25rem 0.55rem 0.75rem;
+    color: #f1f5f9;
+    font-size: 0.8rem;
+    font-weight: 650;
+  }
+
+  .f43-console .sensor-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .f43-console .sensor-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .f43-console .sensor-actions button {
+    flex: 1;
+  }
+
+  .f43-console .lineage-track {
+    gap: 0.65rem;
+    padding-left: 0.55rem;
+  }
+
+  .f43-console .lineage-track::before {
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    left: 0.12rem;
+    border-left: 1px dashed rgb(245 158 11 / 55%);
+    content: "";
+  }
+
+  .f43-console .lineage-node {
+    min-height: 0;
+  }
+
+  .f43-console .lineage-node:not(:last-child)::after {
+    top: auto;
+    right: auto;
+    bottom: -0.47rem;
+    left: -0.55rem;
+    width: 0.55rem;
+    height: 0;
+    transform: none;
+    border: 0;
+    border-top: 1px dashed rgb(245 158 11 / 55%);
+    border-radius: 0;
+    background: transparent;
+    content: "";
+  }
+}
+
+@media (max-width: 520px) {
+  .f43-console .sticker-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .f43-console .sticker-card {
+    gap: 0.75rem;
+    padding: 0.7rem;
+  }
+
+  .f43-console .sticker-card img {
+    flex: 0 0 64px;
+    width: 64px;
+    height: 64px;
+  }
+
+  .f43-console .sticker-copy {
+    font-size: 0.68rem;
+  }
+
+  .f43-console .sticker-token {
+    font-size: 0.77rem;
+    overflow-wrap: anywhere;
+  }
+
+  .f43-console .lineage-mark i {
+    width: 1.1rem;
+  }
+}
+
+@media print {
+  .f43-console,
+  .f43-console .app-shell {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .f43-console .no-print,
+  .f43-console header,
+  .f43-console nav {
+    display: none !important;
+  }
+
+  .f43-console .app-main {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #111 !important;
+  }
+
+  .f43-console .app-main * {
+    color: #111 !important;
+    box-shadow: none !important;
+  }
+
+  .f43-console .app-main [class*="bg-slate-"],
+  .f43-console .app-main [class*="bg-amber-"],
+  .f43-console .app-main [class*="bg-emerald-"] {
+    background: #fff !important;
+  }
+
+  .f43-console .app-main [class*="border-slate-"],
+  .f43-console .app-main [class*="border-amber-"],
+  .f43-console .app-main [class*="border-emerald-"] {
+    border-color: #9ca3af !important;
+  }
+
+  .f43-console .app-main section,
+  .f43-console .app-main table,
+  .f43-console .app-main .rounded-xl {
+    break-inside: avoid;
+  }
+
+  .f43-console .sticker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .f43-console .sticker-card {
+    break-inside: avoid;
+    gap: 0.4rem !important;
+    border-radius: 0 !important;
+    padding: 0.35rem !important;
+  }
+
+  .f43-console .sticker-card img {
+    flex: 0 0 48px !important;
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .f43-console .sticker-token,
+  .f43-console .sticker-source {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
+  .f43-console.print-all-mode .app-main {
+    display: none !important;
+  }
+
+  .f43-console.print-all-mode .print-packet {
+    display: block !important;
+  }
+
+  .f43-console .print-packet {
+    display: none;
+    color: #111;
+    font: 10pt/1.35 Arial, sans-serif;
+  }
+
+  .f43-console .packet-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.9rem;
+    border-bottom: 3px solid #111;
+    padding-bottom: 0.6rem;
+  }
+
+  .f43-console .packet-header h1 {
+    margin: 0.2rem 0;
+    font-size: 19pt;
+    line-height: 1.1;
+  }
+
+  .f43-console .packet-header p {
+    margin: 0;
+    color: #444;
+    font-size: 8pt;
+  }
+
+  .f43-console .packet-kicker {
+    font-size: 7pt !important;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .f43-console .packet-stamp {
+    border: 1.5px solid #111;
+    padding: 0.35rem 0.5rem;
+    font-size: 7pt;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .f43-console .packet-section {
+    margin: 0 0 0.8rem;
+    break-inside: avoid;
+  }
+
+  .f43-console .packet-section h2 {
+    margin: 0 0 0.25rem;
+    border: 1px solid #111;
+    background: #e5e7eb !important;
+    padding: 0.25rem 0.4rem;
+    font-size: 10pt;
+  }
+
+  .f43-console .packet-section p {
+    margin: 0.25rem 0 0.45rem;
+  }
+
+  .f43-console .packet-section table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8pt;
+  }
+
+  .f43-console .packet-section th,
+  .f43-console .packet-section td {
+    border: 1px solid #666;
+    padding: 0.22rem 0.3rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .f43-console .packet-note {
+    border: 1px solid #111;
+    padding: 0.35rem;
+    font-weight: 700;
+  }
+
+  .f43-console .packet-footer {
+    margin-top: 0.8rem;
+    border-top: 1px solid #111;
+    padding-top: 0.3rem;
+    color: #444;
+    font-size: 7pt;
+  }
+}

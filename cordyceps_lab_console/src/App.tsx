@@ -3,6 +3,7 @@ import QRCode from 'qrcode'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { Activity, AlertTriangle, ArrowRightLeft, CalendarDays, Check, ClipboardList, FlaskConical, Layers3, Microscope, Plus, Printer, QrCode, ScanLine, Settings, Snowflake, Syringe, Trash2, Wrench, X, type LucideIcon } from 'lucide-react'
+import F43Console from './F43Console'
 
 type Batch = {
   id: string
@@ -200,6 +201,7 @@ function App() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [cultureFlasks, setCultureFlasks] = useState<CultureFlask[]>([])
   const [activeTab, setActiveTab] = useState(() => activityTabs.find((tab) => tab.process === query.get('process'))?.id ?? 'autoclave')
+  const [appMode, setAppMode] = useState<'logbook' | 'f43'>('logbook')
   const [selectedProcess, setSelectedProcess] = useState<string | null>(query.get('process'))
   const [activityDateTime, setActivityDateTime] = useState(localNow)
   const [settings, setSettings] = useState<AppSettings>(loadSettings)
@@ -421,13 +423,20 @@ function App() {
     )
   }
 
+  if (appMode === 'f43') {
+    return <F43Console onReturnToLogbook={() => setAppMode('logbook')} />
+  }
+
   if (showConfig) {
     return (
       <div className="light-lab min-h-screen bg-[#f6f8f4] p-4 text-slate-900 sm:p-6">
         <section className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div><p className="text-xs uppercase tracking-[0.3em] text-cyan-400">Cordyceps Lab</p><h1 className="mt-2 text-2xl font-semibold text-slate-900">Config</h1></div>
-            <button onClick={() => setShowConfig(false)} aria-label="Back to logbook" title="Back to logbook" className="rounded-lg border border-slate-700 p-3 text-slate-200"><X /></button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setShowConfig(false); setAppMode('f43') }} className="min-h-11 rounded-lg bg-emerald-700 px-4 font-semibold text-white">F43 Lab Console</button>
+              <button onClick={() => setShowConfig(false)} aria-label="Back to logbook" title="Back to logbook" className="rounded-lg border border-slate-700 p-3 text-slate-200"><X /></button>
+            </div>
           </div>
           {feedback && <p className={`mb-5 rounded-lg border px-4 py-3 ${feedback.kind === 'success' ? 'border-emerald-400/40 text-emerald-200' : 'border-rose-400/40 text-rose-200'}`}>{feedback.text}</p>}
           <div className="grid gap-4 sm:grid-cols-2">
@@ -456,11 +465,11 @@ function App() {
   }
 
   return (
-    <div className="light-lab min-h-screen bg-[#f6f8f4] text-slate-900">
+    <div className="logbook-mode light-lab min-h-screen bg-[#f6f8f4] text-slate-900">
       <div className="mx-auto max-w-7xl p-4 sm:p-6">
         <header className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <div><p className="text-xs uppercase tracking-[0.25em] text-emerald-700">Cordyceps Lab</p><h1 className="mt-2 text-2xl font-semibold text-slate-900">Cultivation logbook</h1></div>
-          <div className="flex flex-wrap items-center gap-2"><button onClick={() => setShowConfig(true)} aria-label="Config" title="Config" className="flex min-h-12 items-center gap-2 rounded-lg border border-slate-300 px-4 text-slate-700"><Settings className="h-5 w-5" /> Config</button>{currentTab.process && <button onClick={() => openActivity(currentTab.process!)} className="flex min-h-12 items-center gap-2 rounded-lg bg-emerald-700 px-4 font-semibold text-white"><ClipboardList className="h-5 w-5" /> Log {currentTab.label}</button>}</div>
+          <div className="flex flex-wrap items-center gap-2"><button onClick={() => setAppMode('f43')} className="flex min-h-12 items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-50 px-4 font-semibold text-amber-900 hover:bg-amber-100"><FlaskConical className="h-5 w-5" /> F43 Lab Console</button><button onClick={() => setShowConfig(true)} aria-label="Config" title="Config" className="flex min-h-12 items-center gap-2 rounded-lg border border-slate-300 px-4 text-slate-700"><Settings className="h-5 w-5" /> Config</button>{currentTab.process && <button onClick={() => openActivity(currentTab.process!)} className="flex min-h-12 items-center gap-2 rounded-lg bg-emerald-700 px-4 font-semibold text-white"><ClipboardList className="h-5 w-5" /> Log {currentTab.label}</button>}</div>
         </header>
 
         <nav aria-label="Cultivation process" role="tablist" className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
